@@ -1,8 +1,13 @@
+import os
 import traceback
+from dotenv import load_dotenv
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from models.llm_openai import llm_instance
 from prompts.prompt import task_prompt, security_prompt
+
+# Load environment variables
+load_dotenv()
 
 async def agent_instance(user_prompt: str, model: str , temperature: float , timeout: int ):
     """
@@ -30,17 +35,20 @@ async def agent_instance(user_prompt: str, model: str , temperature: float , tim
         
         if not isinstance(timeout, int) or timeout <= 0:
             raise ValueError("timeout must be a positive integer")
+        
     except Exception as e:
         print(f"Input validation error: {e}")
         raise
   
+    
+
     # Define all tools in one MultiServerMCPClient config
     mcp_tools = MultiServerMCPClient(
         {
-            "math": {  # name of the tool
-                "command": "python",  # command to run the tool
-                "args": ["tools/math_tool.py"],  # address of the tool
-                "transport": "stdio",  # communication method which can be "stdio" or "remote"
+            "serper": {
+                "command": "python",
+                "args": ["tools/serper.py"],
+                "transport": "stdio",
             },
         }
     )
