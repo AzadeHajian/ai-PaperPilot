@@ -1,40 +1,38 @@
 #!/usr/bin/env python3
 """
 Serper MCP Server - A Model Context Protocol server for Serper.dev API
-Provides Google search capabilities through Serper.dev
+Provides Google Scholar search for academic papers
 """
 
 import os
-import sys
 import json
 import http.client
-import asyncio
-from typing import Any
-from mcp.server import Server
-from mcp.types import Tool, TextContent
+from fastmcp import FastMCP
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables and validate SERPER_API_KEY
+try:
+    load_dotenv()
+    
+    serper_api_key = os.getenv("SERPER_API_KEY")
+    if not serper_api_key:
+        raise ValueError("SERPER_API_KEY environment variable is not set. Get your API key from https://serper.dev")
+    
+    SERPER_API_KEY = serper_api_key
+except Exception as e:
+    print(f"Error loading API key: {e}")
+    raise
 
 # Initialize MCP server
-app = Server("serper-search")
-
-# Validate SERPER_API_KEY environment variable
-serper_api_key = os.getenv("SERPER_API_KEY")
-if not serper_api_key:
-    raise ValueError("SERPER_API_KEY environment variable is not set. Get your API key from https://serper.dev")
-
-SERPER_API_KEY = serper_api_key
+mcp = FastMCP("serper")
 
 
-def search_serper(query: str, search_type: str = "search", num_results: int = 10) -> dict:
+def search_scholar(query: str, num_results: int = 10) -> dict:
     """
-    Perform a search using Serper API
+    Search Google Scholar using Serper API
     
     Args:
-        query: The search query
-        search_type: Type of search (search, images, videos, news, places, shopping)
+        query: The academic search query
         num_results: Number of results to return (default: 10)
     
     Returns:
@@ -53,10 +51,7 @@ def search_serper(query: str, search_type: str = "search", num_results: int = 10
             'Content-Type': 'application/json'
         }
         
-        # Map search type to endpoint
-        endpoint = f"/{search_type}"
-        
-        conn.request("POST", endpoint, payload, headers)
+        conn.request("POST", "/scholar", payload, headers)
         res = conn.getresponse()
         data = res.read()
         
@@ -78,49 +73,27 @@ def search_serper(query: str, search_type: str = "search", num_results: int = 10
         }
 
 
-@app.list_tools()
-async def list_tools() -> list[Tool]:
-    """List available Serper search tools"""
-    return [
-        Tool(
-            name="google_search_scholar",
-            description="Search Google Scholar for academic papers and research using Serper API. Returns scholarly articles, citations, and related papers.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The academic search query"
-                    },
-                    "num_results": {
-                        "type": "integer",
-                        "description": "Number of results to return (default: 10, max: 20)",
-                        "default": 10,
-                        "minimum": 1,
-                        "maximum": 20
-                    }
-                },
-                "required": ["query"]
-            }
-        )
-    ]
-
-
-@app.call_tool()
-async def call_tool(name: str, arguments: Any) -> list[TextContent]:
-    """Handle tool calls for Google Scholar searches"""
+@mcp.tool()
+def google_search_scholar(query: str, num_results: int = 10) -> str:
+    """
+    Search Google Scholar for academic papers and research.
+    Returns scholarly articles, citations, and related papers.
     
-    query = arguments.get("query")
-    num_results = arguments.get("num_results", 10)
+    Args:
+        query: The academic search query
+        num_results: Number of results to return (default: 10, max: 20)
     
+    Returns:
+        JSON string with search results including papers, citations, and metadata
+    """
     if not query:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"error": "Query parameter is required"})
-        )]
+        return json.dumps({"error": "Query parameter is required"})
+    
+    # Limit num_results to max of 20 for Scholar
+    num_results = min(num_results, 20)
     
     # Perform Google Scholar search
-    result = search_serper(query, "scholar", num_results)
+    result = search_scholar(query, num_results)
     
     # Format results
     if "error" in result:
@@ -147,24 +120,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         
         response = formatted_result
     
-    return [TextContent(
-        type="text",
-        text=json.dumps(response, indent=2)
-    )]
-
-
-async def main():
-    """Run the Serper MCP server"""
-    from mcp.server.stdio import stdio_server
-    
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+    return json.dumps(response, indent=2)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+     mcp.run(transport="sse", port=8001)
+
 

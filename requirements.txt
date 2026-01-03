@@ -4,6 +4,6 @@ arxiv
 biopython
 langchain-mcp-adapters
 langgraph
-mcp
+fastmcp
 black
 
