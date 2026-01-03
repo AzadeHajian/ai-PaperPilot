@@ -1,0 +1,7 @@
+langchain_openai
+python-dotenv
+arxiv
+biopython
+google-search-results
+langchain-mcp-adapters
+langgraph
