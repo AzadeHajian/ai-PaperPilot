@@ -47,7 +47,7 @@ async def agent_instance(
     mcp_tools = MultiServerMCPClient(
         {
             "serper_tool": {"url": "http://localhost:8001/sse", "transport": "sse"},  #sse:Server-Sent Events
-   #        "arxiv_tool": {"url": "http://localhost:8002/sse", "transport": "sse"}, 
+            "arxiv_tool": {"url": "http://localhost:8002/sse", "transport": "sse"}, 
    #        "pubmed_tool": {"url": "http://localhost:8003/sse", "transport": "sse"},
         }
     )

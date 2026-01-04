@@ -6,4 +6,5 @@ langchain-mcp-adapters
 langgraph
 fastmcp
 black
+arxiv
 
