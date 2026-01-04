@@ -46,7 +46,9 @@ async def agent_instance(
     # Define all tools in one MultiServerMCPClient config
     mcp_tools = MultiServerMCPClient(
         {
-            "serper": {"url": "http://localhost:8001/sse", "transport": "sse"},
+            "serper_tool": {"url": "http://localhost:8001/sse", "transport": "sse"},  #sse:Server-Sent Events
+   #        "arxiv_tool": {"url": "http://localhost:8002/sse", "transport": "sse"}, 
+   #        "pubmed_tool": {"url": "http://localhost:8003/sse", "transport": "sse"},
         }
     )
     print("Connecting to MCP tools and agents")  # Initialize the MCP client
